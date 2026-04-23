@@ -108,15 +108,15 @@ def run_bias_sweep(bias_mags, n_trials=100):
             
     return avg_results
 
-def plot_results(x_vals, results, xlabel_name, title_prefix, filename=None):
+def plot_results(x_vals, results, xlabel_name, title_prefix, n_trials, filename=None):
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-    fig.suptitle(f'{title_prefix} vs Error (MSE)', fontsize=16)
+    fig.suptitle(f'{title_prefix} vs Error (MSE) - Avg of {n_trials} trials', fontsize=16)
 
     # 1. Accelerometer
     axes[0].plot(x_vals, results['Acc_Ellipsoid'], marker='o', label='Ellipsoid')
     axes[0].plot(x_vals, results['Acc_12Param'], marker='x', label='12-Param')
     axes[0].set_title('Accelerometer Calibration')
-    axes[0].set_ylabel('MSE (norm distance)')
+    axes[0].set_ylabel('MSE ($g^2$)')
     axes[0].set_xlabel(xlabel_name)
     axes[0].legend()
     axes[0].grid(True, linestyle='--', alpha=0.6)
@@ -124,7 +124,7 @@ def plot_results(x_vals, results, xlabel_name, title_prefix, filename=None):
     # 2. Magnetometer
     axes[1].plot(x_vals, results['Mag_Ellipsoid'], marker='o', color='green', label='Ellipsoid')
     axes[1].set_title('Magnetometer Calibration')
-    axes[1].set_ylabel('MSE (norm distance)')
+    axes[1].set_ylabel('MSE ($normalized^2$)')
     axes[1].set_xlabel(xlabel_name)
     axes[1].legend()
     axes[1].grid(True, linestyle='--', alpha=0.6)
@@ -132,7 +132,7 @@ def plot_results(x_vals, results, xlabel_name, title_prefix, filename=None):
     # 3. Gyroscope
     axes[2].plot(x_vals, results['Gyro_LeastSquares'], marker='o', color='purple', label='Least Squares')
     axes[2].set_title('Gyroscope Calibration')
-    axes[2].set_ylabel('MSE (Direct GT diff)')
+    axes[2].set_ylabel('MSE ($(deg/s)^2$)')
     axes[2].set_xlabel(xlabel_name)
     axes[2].legend()
     axes[2].grid(True, linestyle='--', alpha=0.6)
@@ -143,14 +143,14 @@ def plot_results(x_vals, results, xlabel_name, title_prefix, filename=None):
 
 if __name__ == "__main__":
     # Test Parameters
-    n_trials = 5 # reduced for faster test execution, adjust to 100 or 1000 later.
+    n_trials = 50 # increased for more reliable results.
     
     # 1. Sigma Sweep
     sigmas = np.linspace(0.0, 0.5, 10)
     res_sigma = run_sigma_sweep(sigmas, n_trials=n_trials)
-    plot_results(sigmas, res_sigma, 'Noise Sigma', 'Noise Sigma', filename='sigma_sweep_results.png')
+    plot_results(sigmas, res_sigma, 'Noise Sigma', 'Noise Sigma', n_trials, filename='sigma_sweep_results.png')
     
     # 2. Bias Sweep
     bias_mags = np.linspace(0.0, 5.0, 10)
     res_bias = run_bias_sweep(bias_mags, n_trials=n_trials)
-    plot_results(bias_mags, res_bias, 'Bias Magnitude (base=[1,1,1])', 'Bias Magnitude', filename='bias_sweep_results.png')
+    plot_results(bias_mags, res_bias, 'Bias Magnitude (base=[1,1,1])', 'Bias Magnitude', n_trials, filename='bias_sweep_results.png')
