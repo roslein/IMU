@@ -159,3 +159,60 @@ def slerp(q0, q1, alpha):
     s1 = sin_theta / sin_theta_0
     
     return q_normalize((s0 * q0) + (s1 * q1))
+
+# --- [추가] 성능 평가 및 시각화를 위한 쿼터니언 변환 유틸리티 ---
+
+def q_angle_error(q_gt, q_est):
+    """
+    두 쿼터니언 사이의 최단 각도 오차(Degree)를 계산합니다.
+    이중 피복(Double Cover, q와 -q가 같음) 문제를 내적의 절댓값으로 자동 해결합니다.
+    """
+    # 1. 내적 계산 및 절댓값 취하기 (-q 문제 해결)
+    dot = np.abs(np.dot(q_gt, q_est))
+    
+    # 2. 부동소수점 오차로 인해 dot 값이 1.0을 아주 미세하게 초과하여 
+    # arccos에서 NaN이 발생하는 것을 방지
+    dot = np.clip(dot, -1.0, 1.0)
+    
+    # 3. 각도 계산 (theta = 2 * arccos(|dot|)) 및 Degree 변환
+    angle_rad = 2.0 * np.arccos(dot)
+    return np.degrees(angle_rad)
+
+def q_align_offset(q_gt_initial, q_est_initial):
+    """
+    t=0 시점의 기준 좌표계 차이를 없애기 위한 정렬(Alignment) 오프셋 쿼터니언을 구합니다.
+    수식: q_gt_0 = q_offset * q_est_0  ->  q_offset = q_gt_0 * inv(q_est_0)
+    """
+    # 단위 쿼터니언에서 역행렬(Inverse)은 켤레(Conjugate)와 동일합니다.
+    q_est_inv = q_conj(q_est_initial)
+    
+    # 오프셋 쿼터니언 도출
+    q_offset = q_mult(q_gt_initial, q_est_inv)
+    return q_normalize(q_offset)
+
+def quat_to_euler(q):
+    """
+    쿼터니언을 오일러 각도(Roll, Pitch, Yaw)로 변환합니다. (단위: Radian)
+    그래프 시각화 목적(사람이 눈으로 확인하기 위한 용도)으로만 사용됩니다.
+    """
+    w, x, y, z = q
+    
+    # Roll (X-axis rotation)
+    sinr_cosp = 2.0 * (w * x + y * z)
+    cosr_cosp = 1.0 - 2.0 * (x**2 + y**2)
+    roll = np.arctan2(sinr_cosp, cosr_cosp)
+    
+    # Pitch (Y-axis rotation)
+    sinp = 2.0 * (w * y - z * x)
+    # 수학적 한계인 짐벌 락(Gimbal Lock) 부근에서의 예외 처리 (90도 클램핑)
+    if np.abs(sinp) >= 1.0:
+        pitch = np.copysign(np.pi / 2.0, sinp)
+    else:
+        pitch = np.arcsin(sinp)
+        
+    # Yaw (Z-axis rotation)
+    siny_cosp = 2.0 * (w * z + x * y)
+    cosy_cosp = 1.0 - 2.0 * (y**2 + z**2)
+    yaw = np.arctan2(siny_cosp, cosy_cosp)
+    
+    return np.array([roll, pitch, yaw])
