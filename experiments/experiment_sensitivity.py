@@ -1,8 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 # Import simulation functions
-from sensor_simulation import (
+from simulation.sensor_simulation import (
     sim_acc_6_position_static, 
     sim_acc_multi_position_static,
     sim_mag_figure8_dynamic,
@@ -11,9 +15,9 @@ from sensor_simulation import (
 )
 
 # Import calibration algorithms
-from calib_accelerometer import calibrate_acc_ellipsoid, calibrate_acc_12param
-from calib_magnetometer import calibrate_mag_ellipsoid
-from calib_gyroscope import calibrate_gyroscope_full
+from calibration.calib_accelerometer import calibrate_acc_ellipsoid, calibrate_acc_12param
+from calibration.calib_magnetometer import calibrate_mag_ellipsoid
+from calibration.calib_gyroscope import calibrate_gyroscope_full
 
 def compute_mse_norm(calibrated_data, target_norm=1.0):
     norms = np.linalg.norm(calibrated_data, axis=1)
