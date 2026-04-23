@@ -1,4 +1,4 @@
-# [Stage 3] IMU 자세 추정(Orientation Tracking) 구현 및 결과 분석 보고서
+# 쿼터니언 및 Complementary Filter를 이용한 자세 추정 결과
 
 본 문서는 가속도계, 자이로스코프, 지자기 센서 데이터를 융합(Sensor Fusion)하여 3차원 절대 자세를 추적하는 **상보 필터(Complementary Filter)**의 구현 결과와 수학적·물리적 특성에 대해 분석한 자료입니다.
 

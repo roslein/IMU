@@ -147,7 +147,7 @@ if __name__ == "__main__":
     # 필터가 추정한 순수 쿼터니언의 4가지 요소를 직접 비교합니다.
     
     fig, axes = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
-    fig.suptitle('IMU Sensor Fusion: Quaternion Tracking (w, x, y, z)', fontsize=16)
+    fig.suptitle(f'IMU Sensor Fusion: Quaternion Tracking (alpha={comp_filter.alpha})', fontsize=16)
 
     labels = ['q_w (Scalar)', 'q_x', 'q_y', 'q_z']
     for i in range(4):
@@ -172,4 +172,4 @@ if __name__ == "__main__":
     os.makedirs('results', exist_ok=True)
     plt.savefig('results/stage3_tracking_result.png', dpi=150, bbox_inches='tight')
     
-    plt.show()
+    # plt.show()

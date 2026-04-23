@@ -142,6 +142,9 @@ def plot_results(x_vals, results, xlabel_name, title_prefix, n_trials, filename=
         plt.savefig(filename, dpi=300)
 
 if __name__ == "__main__":
+    # Ensure results directory exists
+    os.makedirs('results', exist_ok=True)
+    
     # Test Parameters
     n_trials = 50 # increased for more reliable results.
     
