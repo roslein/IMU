@@ -148,9 +148,9 @@ if __name__ == "__main__":
     # 1. Sigma Sweep
     sigmas = np.linspace(0.0, 0.5, 10)
     res_sigma = run_sigma_sweep(sigmas, n_trials=n_trials)
-    plot_results(sigmas, res_sigma, 'Noise Sigma', 'Noise Sigma', n_trials, filename='sigma_sweep_results.png')
+    plot_results(sigmas, res_sigma, 'Noise Sigma', 'Noise Sigma', n_trials, filename='results/sigma_sweep_results.png')
     
     # 2. Bias Sweep
     bias_mags = np.linspace(0.0, 5.0, 10)
     res_bias = run_bias_sweep(bias_mags, n_trials=n_trials)
-    plot_results(bias_mags, res_bias, 'Bias Magnitude (base=[1,1,1])', 'Bias Magnitude', n_trials, filename='bias_sweep_results.png')
+    plot_results(bias_mags, res_bias, 'Bias Magnitude (base=[1,1,1])', 'Bias Magnitude', n_trials, filename='results/bias_sweep_results.png')
