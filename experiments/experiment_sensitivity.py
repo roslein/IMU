@@ -80,7 +80,8 @@ def run_sigma_sweep(sigmas, n_trials=100):
     b_zero = np.array([0.0, 0.0, 0.0])
     avg_results = {k: [] for k in ['Acc_Ellipsoid', 'Acc_12Param', 'Mag_Ellipsoid', 'Gyro_LeastSquares']}
     
-    for s in sigmas:
+    for i, s in enumerate(sigmas):
+        print(f"  Step {i+1}/{len(sigmas)}: Sigma = {s:.3f} ...", end=" ", flush=True)
         trials = {k: [] for k in avg_results.keys()}
         for _ in range(n_trials):
             res = evaluate_sensors(sigma=s, b_vector=b_zero)
@@ -88,6 +89,7 @@ def run_sigma_sweep(sigmas, n_trials=100):
         
         for k in avg_results:
             avg_results[k].append(np.mean(trials[k]))
+        print("Done.")
             
     return avg_results
 
@@ -96,7 +98,8 @@ def run_bias_sweep(bias_mags, n_trials=100):
     base_bias = np.array([1.0, 1.0, 1.0])
     avg_results = {k: [] for k in ['Acc_Ellipsoid', 'Acc_12Param', 'Mag_Ellipsoid', 'Gyro_LeastSquares']}
     
-    for bm in bias_mags:
+    for i, bm in enumerate(bias_mags):
+        print(f"  Step {i+1}/{len(bias_mags)}: Bias Mag = {bm:.3f} ...", end=" ", flush=True)
         b_vec = base_bias * bm
         trials = {k: [] for k in avg_results.keys()}
         for _ in range(n_trials):
@@ -105,6 +108,7 @@ def run_bias_sweep(bias_mags, n_trials=100):
             
         for k in avg_results:
             avg_results[k].append(np.mean(trials[k]))
+        print("Done.")
             
     return avg_results
 

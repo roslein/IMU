@@ -20,8 +20,8 @@ def calibrate_acc_ellipsoid(raw_multi, n_samples_per_pos):
         cal = (W @ (d - b).T).T
         return np.linalg.norm(cal, axis=1) - 1.0
     
-    # 가중치와 bias 초기화 -> least square는 1차원 숫자 리스트만 받을 수 있어서 한 변수에 쑤셔넣고 flatten
-    p0 = np.concatenate([np.zeros(3), np.eye(3).flatten()])
+    # 2. 파라미터 초기화: 바이어스는 데이터의 평균값으로, 행렬은 단위 행렬로 시작
+    p0 = np.concatenate([np.mean(data_avg, axis=0), np.eye(3).flatten()])
     # 3.scipy의 함수 사용 -> 오차 계산법과 시작점(p0) 그리고 데이터를 넘겨주고 최적화 -> 내부적으로 무한 루프를 돌면서 함수를 수백번 호출하며 W,b를 수정
     res = least_squares(residuals, p0, args=(data_avg,))
     return res.x[3:].reshape((3,3)), res.x[:3]

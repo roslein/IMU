@@ -16,8 +16,8 @@ def calibrate_mag_ellipsoid(raw_dynamic, target_norm=1.0):
         cal = (W @ (d - b).T).T
         return np.linalg.norm(cal, axis=1) - target_norm
     
-    # 2. 파라미터 초기화: 바이어스는 0, 행렬은 단위 행렬로 시작하여 1차원 배열로 평탄화(flatten)
-    p0 = np.concatenate([np.zeros(3), np.eye(3).flatten()])
+    # 2. 파라미터 초기화: 바이어스는 데이터의 평균값으로, 행렬은 단위 행렬로 시작
+    p0 = np.concatenate([np.mean(raw_dynamic, axis=0), np.eye(3).flatten()])
     
     # 3. 비선형 최소제곱법 최적화 실행
     # 8자 궤적 전체 데이터(raw_dynamic)를 그대로 입력으로 전달
