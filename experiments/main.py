@@ -168,8 +168,10 @@ if __name__ == "__main__":
     plt.tight_layout()
     
     # 보고서용 결과 그래프 이미지 자동 저장
-    import os
-    os.makedirs('results', exist_ok=True)
-    plt.savefig('results/stage3_tracking_result.png', dpi=150, bbox_inches='tight')
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    RESULTS_DIR = os.path.join(SCRIPT_DIR, '..', 'results')
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    
+    plt.savefig(os.path.join(RESULTS_DIR, 'stage3_tracking_result.png'), dpi=150, bbox_inches='tight')
     
     # plt.show()

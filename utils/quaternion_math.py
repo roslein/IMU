@@ -29,7 +29,8 @@ def q_conj(q):
     쿼터니언의 켤레(Conjugate)를 반환합니다. 역회전에 사용됩니다.
     """
     return np.array([q[0], -q[1], -q[2], -q[3]])
-
+'''
+# dcm to quaternion이 훨씬 더 직관적이고 편한 방법이므로 사용하지 않기로 함.
 def get_shortest_arc_quaternion(v1, v2):
     """
     두 3D 벡터 v1에서 v2로 회전하는 최단 경로 쿼터니언을 구합니다. (Method 2)
@@ -75,7 +76,7 @@ def get_shortest_arc_quaternion(v1, v2):
     # 자기 자신의 크기(Norm)로 나누는 q_normalize를 거치는 순간, 
     # q_raw에 붙어있던 스칼라 덩어리 2cos(θ/2)가 완벽하게 약분되어 날아가고 순수한 단위 회전 쿼터니언만 남습니다.
     return q_normalize(q)
-
+'''
 def dcm_to_quaternion(R):
     """
     3x3 회전 행렬(DCM, Direction Cosine Matrix)을 쿼터니언으로 변환합니다.
