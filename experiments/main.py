@@ -26,6 +26,17 @@ from utils.utils_visualization import ( #
 from utils.quaternion_math import accel_mag_to_quaternion
 
 if __name__ == "__main__":
+
+    # -1.실험 결과 저장 디렉토리 설정 및 생성
+    RESULT_DIR = r"D:\바탕화면\CS-Study-Tracker\IMU\results"
+    if not os.path.exists(RESULT_DIR):
+        os.makedirs(RESULT_DIR)
+        print(f"Directory created: {RESULT_DIR}")
+
+    # 실험 타입 설정 (파일명 구분을 위해)
+    # main.py -> "noisy"
+    exp_type = "noisy"
+
     print("=== [Full Pipeline Integration Test] ===")
     # 0. 공통 가상 센서 고유 오차(M, b) 정의
     M_acc_true = np.array([[1.05, 0.02, 0.01], [0.01, 0.98, 0.02], [0.02, 0.01, 1.02]])
@@ -103,10 +114,10 @@ if __name__ == "__main__":
 
     # 3. 종합 시각화 호출
     print("\n[1/3] 각도 오차(RMSE) 시각화 중...")
-    plot_tracking_angle_error(time_data, angle_errors, 0.98) #
+    plot_tracking_angle_error(time_data, angle_errors, 0.98,save_path=os.path.join(RESULT_DIR, f"{exp_type}_angle_error.png")) #
 
     print("\n[2/3] 오일러 각도 비교 (짐벌 락 극복 확인)...")
-    plot_tracking_euler_comparison(time_data, euler_gt, euler_est, 0.98) #
+    plot_tracking_euler_comparison(time_data, euler_gt, euler_est, 0.98,save_path=os.path.join(RESULT_DIR, f"{exp_type}_euler_comparison.png")) #
 
     print("\n[3/3] 3D 쿼터니언 트래킹 애니메이션 실행...")
-    animate_quaternion_tracking(time_data, gt_quats, est_quats) #
+    animate_quaternion_tracking(time_data, gt_quats, est_quats,save_path=os.path.join(RESULT_DIR, f"{exp_type}_tracking_animation.gif")) #

@@ -25,6 +25,16 @@ from utils.utils_visualization import (
 from simulation.sensor_simulation import sim_mag_multi_position_static
 
 def run_ideal_tracking_experiment():
+    # -1.실험 결과 저장 디렉토리 설정 및 생성
+    RESULT_DIR = r"D:\바탕화면\CS-Study-Tracker\IMU\results"
+    if not os.path.exists(RESULT_DIR):
+        os.makedirs(RESULT_DIR)
+        print(f"Directory created: {RESULT_DIR}")
+
+    # 실험 타입 설정 (파일명 구분을 위해)
+    # main.py -> "ideal"
+    exp_type = "ideal"
+
     print("=== [Ideal Zero-Noise] IMU Quaternion Tracking & Calibration Verification ===")
     print("이 실험은 센서의 노이즈(sigma)를 0으로 통제하여, 캘리브레이션 및 퓨전 알고리즘에")
     print("수학적/기하학적 결함이 없음을 증명하는 무결점 테스트입니다.\n")
@@ -76,7 +86,7 @@ def run_ideal_tracking_experiment():
     # 도출된 파라미터로 측정 데이터 보정 역산
     calib_gyro = (W_gyro @ (meas_gyro - b_gyro).T).T
     calib_acc  = (W_acc  @ (meas_acc  - b_acc).T).T
-    calib_mag  = (W_mag  @ (meas_mag  - b_mag).T).T
+    calib_mag  = (W_mag  @ (meas_mag  - b_mag_est).T).T
 
     # 5. 첫 프레임 측정값 기반 완벽한 초기 자세(q_init) 계산
     print("   - Initializing quaternion from first frame measurements...")
@@ -97,14 +107,14 @@ def run_ideal_tracking_experiment():
     euler_est = np.array([quat_to_euler(q) for q in est_quats])
 
     # 8. 시각화
-    print("\n[1/3] Plotting Angle Error (\u03b8) with RMSE...")
-    plot_tracking_angle_error(time_data, angle_errors, filter_alpha)
+    print("\n[1/3] 각도 오차(RMSE) 시각화 중...")
+    plot_tracking_angle_error(time_data, angle_errors, 0.98,save_path=os.path.join(RESULT_DIR, f"{exp_type}_angle_error.png")) #
 
-    print("\n[2/3] Plotting Euler Angle Comparison (Checking Gimbal Lock survival)...")
-    plot_tracking_euler_comparison(time_data, euler_gt, euler_est, filter_alpha)
+    print("\n[2/3] 오일러 각도 비교 (짐벌 락 극복 확인)...")
+    plot_tracking_euler_comparison(time_data, euler_gt, euler_est, 0.98,save_path=os.path.join(RESULT_DIR, f"{exp_type}_euler_comparison.png")) #
 
-    print("\n[3/3] Running 3D Quaternion Tracking Animation...")
-    animate_quaternion_tracking(time_data, gt_quats, est_quats, skip_frames=5)
+    print("\n[3/3] 3D 쿼터니언 트래킹 애니메이션 실행...")
+    animate_quaternion_tracking(time_data, gt_quats, est_quats,save_path=os.path.join(RESULT_DIR, f"{exp_type}_tracking_animation.gif"))
     
     print("\nExperiment completed.")
 
