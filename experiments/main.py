@@ -16,55 +16,80 @@ from calibration.calib_magnetometer import calibrate_mag_ellipsoid
 from calibration.calib_gyroscope import calibrate_gyroscope_full
 from tracking.complementary_quaternion import ComplementaryFilter
 from utils.utils_visualization import verify_calibration_pipeline, verify_gyro_calibration_pipeline
+from utils.quaternion_math import q_angle_error, q_align_offset, quat_to_euler, q_mult #
+from utils.utils_visualization import ( #
+    plot_tracking_angle_error,
+    plot_tracking_euler_comparison,
+    animate_quaternion_tracking
+)
 
 if __name__ == "__main__":
     print("=== [Full Pipeline Integration Test] ===")
+    # 0. 공통 가상 센서 고유 오차(M, b) 정의
+    M_acc_true = np.array([[1.05, 0.02, 0.01], [0.01, 0.98, 0.02], [0.02, 0.01, 1.02]])
+    b_acc_true = np.array([0.05, -0.03, 0.1])
+    
+    M_mag_true = np.array([[1.1, 0.1, 0.0], [0.1, 0.9, -0.1], [0.0, -0.1, 1.2]])
+    b_mag_true = np.array([0.3, -0.2, 0.1])
+    
+    M_gyro_true = np.array([[1.02, 0.01, -0.01], [0.01, 0.99, 0.02], [-0.02, 0.01, 1.05]])
+    b_gyro_true = np.array([1.5, -0.8, 0.5])
 
     # 1. Accelerometer Calibration
     print("\n1. Accelerometer Stage...")
-    _, raw_6pos = sim_acc_6_position_static()
+    _, raw_6pos = sim_acc_6_position_static(M_matrix=M_acc_true, b_vector=b_acc_true)
     W_acc, b_acc = calibrate_acc_12param(raw_6pos, n_samples_per_pos=100)
     print(f"   - Accel Calibration Done. Bias: {b_acc}")
 
     # 2. Magnetometer Calibration
     print("\n2. Magnetometer Stage...")
-    _, raw_mag = sim_mag_figure8_dynamic()
+    _, raw_mag = sim_mag_figure8_dynamic(M_matrix=M_mag_true, b_vector=b_mag_true)
     W_mag, b_mag = calibrate_mag_ellipsoid(raw_mag)
     print(f"   - Mag Calibration Done. Bias: {b_mag}")
 
     # 3. Gyroscope Calibration
     print("\n3. Gyroscope Stage...")
-    _, raw_gyro_static = sim_gyro_static_for_bias()
-    gt_gyro_rate, raw_gyro_rate = sim_gyro_rate_table_for_M()
+    _, raw_gyro_static = sim_gyro_static_for_bias(M_matrix=M_gyro_true, b_vector=b_gyro_true)
+    gt_gyro_rate, raw_gyro_rate = sim_gyro_rate_table_for_M(M_matrix=M_gyro_true, b_vector=b_gyro_true)
     sim_data_gyro = {'gyro_static': (None, raw_gyro_static), 'gyro_rate': (gt_gyro_rate, raw_gyro_rate)}
     W_gyro, b_gyro = calibrate_gyroscope_full(sim_data_gyro)
     print(f"   - Gyro Calibration Done. Bias: {b_gyro}")
 
-    # 4. Sensor Fusion (Integration Test)
+    # 4. Sensor Fusion (Integration Test) & 보정
     print("\n4. Sensor Fusion Stage (Running 10s Simulation)...")
     dt = 0.01
     time_data, gt_quats, meas_gyro, meas_acc, meas_mag = sim_imu_continuous_rotation(
-        time_span=10.0, dt=dt, pitch_amp=1.6 # 짐벌 락 구역 포함
+        time_span=10.0, dt=dt, pitch_amp=1.6,
+        M_gyro=M_gyro_true, b_gyro=b_gyro_true,
+        M_acc=M_acc_true, b_acc=b_acc_true,
+        M_mag=M_mag_true, b_mag=b_mag_true
     )
+    calib_gyro = (W_gyro @ (meas_gyro - b_gyro).T).T
+    calib_acc  = (W_acc  @ (meas_acc  - b_acc).T).T
+    calib_mag  = (W_mag  @ (meas_mag  - b_mag).T).T
 
-    comp_filter = ComplementaryFilter(alpha=0.98, dt=dt)
-    est_quats = np.array([comp_filter.update(g, a, m) for g, a, m in zip(meas_gyro, meas_acc, meas_mag)])
+    # ... [보정 데이터(calib_*) 생성 이후 로직] ...
 
-    # 5. 결과 저장 (시각화 창 없이 자동 저장)
-    RESULTS_DIR = os.path.join(os.path.dirname(__file__), '..', 'results')
-    os.makedirs(RESULTS_DIR, exist_ok=True)
-    
-    # 간단한 쿼터니언 트래킹 그래프 생성 및 저장
-    fig, axes = plt.subplots(4, 1, figsize=(10, 8), sharex=True)
-    labels = ['q_w', 'q_x', 'q_y', 'q_z']
-    for i in range(4):
-        axes[i].plot(time_data, gt_quats[:, i], 'k--', label='GT')
-        axes[i].plot(time_data, est_quats[:, i], 'b', alpha=0.7, label='Est')
-        axes[i].set_ylabel(labels[i])
-        axes[i].grid(True)
-    axes[0].legend()
-    plt.tight_layout()
-    
-    report_path = os.path.join(RESULTS_DIR, 'integration_test_report.png')
-    plt.savefig(report_path)
-    print(f"\n[Success] Full pipeline check completed. Result saved to: {report_path}")
+    # 1. 보정 후(Calibrated) 데이터로 트래킹 진행
+    comp_filter = ComplementaryFilter(alpha=0.98, dt=dt) #
+    est_quats = np.array([comp_filter.update(g, a, m) for g, a, m in zip(calib_gyro, calib_acc, calib_mag)]) #
+
+    # 2. 기준 좌표계 정렬 (t=0 시점의 오프셋 제거)
+    # 필터가 시작하는 시점의 오차를 보정해줘야 순수한 트래킹 성능을 측정할 수 있습니다.
+    q_offset = q_align_offset(gt_quats[0], est_quats[0]) #
+    est_quats_aligned = np.array([q_mult(q_offset, q) for q in est_quats]) #
+
+    # 3. 에러 측정 및 오일러 각 변환
+    angle_errors = np.array([q_angle_error(gt, est) for gt, est in zip(gt_quats, est_quats_aligned)]) #
+    euler_gt = np.array([quat_to_euler(q) for q in gt_quats]) #
+    euler_est = np.array([quat_to_euler(q) for q in est_quats_aligned]) #
+
+    # 4. 종합 시각화 호출
+    print("\n[1/3] 각도 오차(RMSE) 시각화 중...")
+    plot_tracking_angle_error(time_data, angle_errors, 0.98) #
+
+    print("\n[2/3] 오일러 각도 비교 (짐벌 락 극복 확인)...")
+    plot_tracking_euler_comparison(time_data, euler_gt, euler_est, 0.98) #
+
+    print("\n[3/3] 3D 쿼터니언 트래킹 애니메이션 실행...")
+    animate_quaternion_tracking(time_data, gt_quats, est_quats_aligned) #
