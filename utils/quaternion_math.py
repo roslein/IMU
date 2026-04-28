@@ -124,9 +124,12 @@ def accel_mag_to_quaternion(acc_meas, mag_meas):
     # 3. North 벡터 (East와 Down의 외적을 통해 직교하는 수평성분만 담긴 North 방향 도출)
     N = np.cross(E, D)
     
-    # 4. 회전 행렬 구성 (Body to NED) -> 변환 후 쿼터니언으로 도출
+    # 4. 회전 행렬 구성 (Body to NED) 
     # 열 벡터로 N, E, D를 배치하여 DCM을 만듭니다.
     R = np.column_stack((N, E, D))
+ 
+    # 5. 수동회전을 능동회전으로 변환 -> 변환 후 쿼터니언으로 도출
+    R = R.T
     
     return dcm_to_quaternion(R)
 

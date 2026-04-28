@@ -7,16 +7,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.quaternion_math import q_mult, accel_mag_to_quaternion, slerp
 
 class ComplementaryFilter:
-    def __init__(self, alpha=0.98, dt=0.01):
-        """
-        상보 필터 초기화
-        alpha: 자이로스코프 데이터를 얼마나 신뢰할 것인가 (예: 0.98 = 자이로 98%, 가속도/지자기 2%)
-        dt: 측정 주파수 (샘플링 타임)
-        """
+    def __init__(self, alpha=0.98, dt=0.01, q_init=None): # q_init 파라미터 추가
         self.alpha = alpha
         self.dt = dt
-        # 초기 자세는 회전이 없는 단위 쿼터니언 [w, x, y, z]
-        self.q = np.array([1.0, 0.0, 0.0, 0.0]) 
+        
+        # 외부에서 초기 자세를 넘겨주면 그것을 사용하고, 없으면 기본값(0도) 사용
+        if q_init is not None:
+            self.q = q_init
+        else:
+            self.q = np.array([1.0, 0.0, 0.0, 0.0])
 
     def update(self, gyro, acc, mag):
         """
