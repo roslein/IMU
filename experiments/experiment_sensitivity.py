@@ -18,6 +18,7 @@ from simulation.sensor_simulation import (
 from calibration.calib_accelerometer import calibrate_acc_ellipsoid, calibrate_acc_12param
 from calibration.calib_magnetometer import calibrate_mag_ellipsoid
 from calibration.calib_gyroscope import calibrate_gyroscope_full
+from simulation.sensor_simulation import sim_mag_multi_position_static
 
 def compute_mse_norm(calibrated_data, target_norm=1.0):
     norms = np.linalg.norm(calibrated_data, axis=1)
@@ -54,9 +55,13 @@ def evaluate_sensors(sigma, b_vector):
     # ---------------------------
     # 2. Magnetometer (MSE to norm 1.0)
     # ---------------------------
-    _, raw_mag = sim_mag_figure8_dynamic(n_samples=1000, sigma=sigma, b_vector=b_vector)
-    W_mag, b_mag = calibrate_mag_ellipsoid(raw_mag, target_norm=1.0)
-    del_mag = (W_mag @ (raw_mag - b_mag).T).T
+    #_, raw_mag = sim_mag_figure8_dynamic(n_samples=1000, sigma=sigma, b_vector=b_vector)
+    _, raw_mag_multi = sim_mag_multi_position_static(
+        n_positions=50, n_samples_per_pos=10
+    )
+    # 정적 평균화를 위해 n_samples_per_pos 전달
+    W_mag, b_mag_est = calibrate_mag_ellipsoid(raw_mag_multi, n_samples_per_pos=10)
+    del_mag = (W_mag @ (raw_mag_multi - b_mag_est).T).T
     results['Mag_Ellipsoid'] = compute_mse_norm(del_mag, 1.0)
 
     # ---------------------------

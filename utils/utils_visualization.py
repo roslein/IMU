@@ -111,7 +111,7 @@ def verify_gyro_calibration_pipeline(data_gt, data_raw, dict_calibrated_data,
 # [Step 2] 2D 성능 평가 그래프 유틸리티
 # ==========================================
 
-def plot_tracking_angle_error(time_data, angle_errors, alpha_val):
+def plot_tracking_angle_error(time_data, angle_errors, alpha_val,save_path=None):
     """
     시간에 따른 두 쿼터니언 사이의 절대 각도 오차(Degree)를 시각화합니다.
     """
@@ -133,9 +133,13 @@ def plot_tracking_angle_error(time_data, angle_errors, alpha_val):
     
     plt.legend()
     plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300)
+        print(f"   > Euler Comparison plot saved to: {save_path}")
     plt.show()
 
-def plot_tracking_euler_comparison(time_data, euler_gt, euler_est, alpha_val):
+def plot_tracking_euler_comparison(time_data, euler_gt, euler_est, alpha_val,save_path=None):
     """
     Roll, Pitch, Yaw 각각의 추이를 Ground Truth와 비교합니다.
     (짐벌 락 구역에서의 오일러 플립 현상을 확인하기 좋은 그래프입니다.)
@@ -161,13 +165,17 @@ def plot_tracking_euler_comparison(time_data, euler_gt, euler_est, alpha_val):
             
     axes[2].set_xlabel('Time [s]')
     plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300)
+        print(f"   > Euler Comparison plot saved to: {save_path}")
     plt.show()
 
 # ==========================================
 # [Step 3] 3D 동적 시각화 애니메이션
 # ==========================================
 
-def animate_quaternion_tracking(time_data, gt_quats, est_quats, skip_frames=5):
+def animate_quaternion_tracking(time_data, gt_quats, est_quats, skip_frames=5,save_path=None):
     """
     Matplotlib을 이용하여 GT와 Estimated 쿼터니언의 3D 회전을 실시간으로 나란히 비교합니다.
     skip_frames: 렌더링 속도를 위해 건너뛸 프레임 수 (기본 5)
@@ -239,6 +247,10 @@ def animate_quaternion_tracking(time_data, gt_quats, est_quats, skip_frames=5):
     # 애니메이션 실행 (interval은 프레임간 지연 시간 ms)
     ani = animation.FuncAnimation(fig, update, frames=total_frames, 
                                   interval=20, blit=False, repeat=False)
-    
+    if save_path:
+        print(f"   > Saving animation to GIF (this may take a moment)...")
+        # GIF 저장을 위해 pillow 라이브러리가 필요합니다 (pip install pillow)
+        ani.save(save_path, writer='pillow', fps=int(1/(time_data[1]-time_data[0])/skip_frames))
+        print(f"   > Animation saved to: {save_path}")
     plt.show()
     return ani

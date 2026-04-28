@@ -11,6 +11,7 @@ from simulation.sensor_simulation import (
     sim_mag_figure8_dynamic, sim_gyro_static_for_bias, 
     sim_gyro_rate_table_for_M, sim_imu_continuous_rotation
 )
+from simulation.sensor_simulation import sim_mag_multi_position_static
 from calibration.calib_accelerometer import calibrate_acc_ellipsoid, calibrate_acc_12param
 from calibration.calib_magnetometer import calibrate_mag_ellipsoid
 from calibration.calib_gyroscope import calibrate_gyroscope_full
@@ -45,9 +46,13 @@ if __name__ == "__main__":
 
     # 2. Magnetometer Calibration
     print("\n2. Magnetometer Stage...")
-    _, raw_mag = sim_mag_figure8_dynamic(M_matrix=M_mag_true, b_vector=b_mag_true)
+    #_, raw_mag = sim_mag_figure8_dynamic(M_matrix=M_mag_true, b_vector=b_mag_true)
     # _, raw_mag = sim_mag_figure8_dynamic(sigma=0.0, M_matrix=M_mag_true, b_vector=b_mag_true)
-    W_mag, b_mag = calibrate_mag_ellipsoid(raw_mag)
+    _, raw_mag_multi = sim_mag_multi_position_static(
+        n_positions=50, n_samples_per_pos=10, 
+        M_matrix=M_mag_true, b_vector=b_mag_true
+    )
+    W_mag, b_mag = calibrate_mag_ellipsoid(raw_mag_multi)
     print(f"   - Mag Calibration Done. Bias: {b_mag}")
 
     # 3. Gyroscope Calibration

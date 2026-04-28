@@ -79,6 +79,27 @@ def sim_mag_figure8_dynamic(n_samples=1000, sigma=0.02, M_matrix=None, b_vector=
     b_mag = np.array(b_vector) if b_vector is not None else np.array([0.3, -0.2, 0.1])
     return gt_dynamic, apply_distortion(gt_dynamic, M_mag, b_mag, sigma)
 
+def sim_mag_multi_position_static(n_positions=50, n_samples_per_pos=10, sigma=0.02, M_matrix=None, b_vector=None):
+    """
+    정적 평균화(Static Averaging)와 구면 전체의 고른 커버리지를 위해 
+    다양한 무작위 3D 각도로 센서를 멈춰서 지자기 데이터를 수집하는 상황을 모사합니다.
+    """
+    # 3D 구면상에 고르게 퍼진 타겟 벡터(자세) 생성
+    theta = np.random.uniform(0, np.pi, n_positions)
+    phi = np.random.uniform(0, 2*np.pi, n_positions)
+    x = np.sin(theta) * np.cos(phi)
+    y = np.sin(theta) * np.sin(phi)
+    z = np.cos(theta)
+    
+    base_vectors = np.vstack([x, y, z]).T
+    
+    # 각 자세마다 n_samples_per_pos 만큼 정지하여 데이터 수집 (노이즈 상쇄용)
+    gt_multi = np.repeat(base_vectors, n_samples_per_pos, axis=0)
+    
+    M_mag = np.array(M_matrix) if M_matrix is not None else np.array([[1.1, 0.1, 0.0], [0.1, 0.9, -0.1], [0.0, -0.1, 1.2]])
+    b_mag = np.array(b_vector) if b_vector is not None else np.array([0.3, -0.2, 0.1])
+    
+    return gt_multi, apply_distortion(gt_multi, M_mag, b_mag, sigma)
 
 
 # ==========================================

@@ -1,30 +1,42 @@
 import numpy as np
 from scipy.optimize import least_squares
 
-
-# --- [전처리 함수] 여러 샘플을 하나의 평균 점으로 압축 ---
 def preprocess_static_samples(raw_data, n_samples_per_pos):
     # (Total_Samples, 3) -> (Positions, n_samples_per_pos, 3) -> (Positions, 3)
     n_positions = len(raw_data) // n_samples_per_pos
     reshaped = raw_data.reshape((n_positions, n_samples_per_pos, 3))
     return np.mean(reshaped, axis=1)
 
-# --- [알고리즘 1] 다중 자세 타원체 피팅 ---
+# --- [업그레이드된 알고리즘 1] 다중 자세 타원체 피팅 (대칭 행렬 강제) ---
 def calibrate_acc_ellipsoid(raw_multi, n_samples_per_pos):
-    # 1. 전처리 (노이즈 제거를 위한 평균화)
     data_avg = preprocess_static_samples(raw_multi, n_samples_per_pos)
     
-    # 2. 오차 정의(Nested Function) -> 측정값 - bias 후 W 곱해서 1(이론값 = 중력가속도)에 빼주기
     def residuals(p, d):
-        b, W = p[:3], p[3:].reshape((3,3))
+        b = p[:3]
+        # 🚨 6개의 변수만으로 대칭 행렬 W 강제 조립 (회전 오차 원천 차단)
+        W = np.array([
+            [p[3], p[4], p[5]],
+            [p[4], p[6], p[7]],
+            [p[5], p[7], p[8]]
+        ])
         cal = (W @ (d - b).T).T
         return np.linalg.norm(cal, axis=1) - 1.0
     
-    # 2. 파라미터 초기화: 바이어스는 데이터의 평균값으로, 행렬은 단위 행렬로 시작
-    p0 = np.concatenate([np.mean(data_avg, axis=0), np.eye(3).flatten()])
-    # 3.scipy의 함수 사용 -> 오차 계산법과 시작점(p0) 그리고 데이터를 넘겨주고 최적화 -> 내부적으로 무한 루프를 돌면서 함수를 수백번 호출하며 W,b를 수정
+    # 파라미터 초기화: bias(3개) + 6개의 독립 변수 (대각선 1, 나머지 0)
+    p0 = np.concatenate([np.mean(data_avg, axis=0), [1.0, 0.0, 0.0, 1.0, 0.0, 1.0]])
+    
     res = least_squares(residuals, p0, args=(data_avg,))
-    return res.x[3:].reshape((3,3)), res.x[:3]
+    
+    # 최적화된 결과 추출
+    p = res.x
+    W_est = np.array([
+        [p[3], p[4], p[5]],
+        [p[4], p[6], p[7]],
+        [p[5], p[7], p[8]]
+    ])
+    b_est = p[:3]
+    
+    return W_est, b_est
 
 # --- [알고리즘 2] 12-파라미터 반복 보정 ---
 def calibrate_acc_12param(raw_6pos, n_samples_per_pos, max_iter=20):
