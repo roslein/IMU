@@ -50,17 +50,14 @@ if __name__ == "__main__":
 
     # 1. Accelerometer Calibration
     print("\n1. Accelerometer Stage...")
-    _, raw_6pos = sim_acc_6_position_static(M_matrix=M_acc_true, b_vector=b_acc_true)
-    # _, raw_6pos = sim_acc_6_position_static(sigma=0.0, M_matrix=M_acc_true, b_vector=b_acc_true)
-    W_acc, b_acc = calibrate_acc_12param(raw_6pos, n_samples_per_pos=100)
+    _, raw_6pos = sim_acc_6_position_static(n_samples_per_pos=500, M_matrix=M_acc_true, b_vector=b_acc_true)
+    W_acc, b_acc = calibrate_acc_12param(raw_6pos, n_samples_per_pos=500)
     print(f"   - Accel Calibration Done. Bias: {b_acc}")
 
     # 2. Magnetometer Calibration
     print("\n2. Magnetometer Stage...")
-    #_, raw_mag = sim_mag_figure8_dynamic(M_matrix=M_mag_true, b_vector=b_mag_true)
-    # _, raw_mag = sim_mag_figure8_dynamic(sigma=0.0, M_matrix=M_mag_true, b_vector=b_mag_true)
     _, raw_mag_multi = sim_mag_multi_position_static(
-        n_positions=50, n_samples_per_pos=10, 
+        n_positions=50, n_samples_per_pos=500, # 측정 시간 대폭 증가 (정적 평균화)
         M_matrix=M_mag_true, b_vector=b_mag_true
     )
     W_mag, b_mag = calibrate_mag_ellipsoid(raw_mag_multi)

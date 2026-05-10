@@ -178,3 +178,64 @@ def sim_imu_continuous_rotation(time_span=10.0, dt=0.01,
     meas_mag = apply_distortion(raw_mag, M_m, b_m, sigma_mag)
 
     return time, np.array(gt_quats), meas_gyro, meas_acc, meas_mag
+
+# ==========================================
+# 5. 센서 퓨전 테스트용 정적 자세 시나리오 (Static Object)
+# ==========================================
+def sim_imu_static_pose(time_span=10.0, dt=0.01, 
+                        roll_deg=30.0, pitch_deg=45.0, yaw_deg=60.0,
+                        sigma_gyro=0.01, sigma_acc=0.02, sigma_mag=0.05,
+                        M_gyro=None, b_gyro=None,
+                        M_acc=None, b_acc=None,
+                        M_mag=None, b_mag=None):
+    """
+    고정된 오일러 각도를 유지하는 정적(Static) 환경에서의 센서 데이터를 시뮬레이션합니다.
+    자이로스코프의 실제 각속도는 0이며, 노이즈와 편향(Bias)만이 출력에 누적됩니다.
+    초기 자세 추정의 중요성과 자이로스코프 편향의 영향을 관찰하기에 적합합니다.
+    """
+    time = np.arange(0, time_span, dt)
+    n_samples = len(time)
+
+    # 1. 고정된 오일러 각도를 라디안으로 변환
+    roll = np.full(n_samples, np.radians(roll_deg))
+    pitch = np.full(n_samples, np.radians(pitch_deg))
+    yaw = np.full(n_samples, np.radians(yaw_deg))
+
+    raw_gyro = np.zeros((n_samples, 3))  # 정지 상태이므로 실제 각속도는 0
+    raw_acc = np.zeros((n_samples, 3))
+    raw_mag = np.zeros((n_samples, 3))
+
+    # 글로벌 절대 벡터
+    ned_up = np.array([0.0, 0.0, -1.0]) 
+    ned_north = np.array([1.0, 0.0, 0.5]) 
+    ned_north = ned_north / np.linalg.norm(ned_north)
+
+    # 2. 센서 데이터 생성 (고정된 자세 역회전)
+    r = R_scipy.from_euler('xyz', [roll[0], pitch[0], yaw[0]])
+    q = r.as_quat() 
+    q_gt = np.array([q[3], q[0], q[1], q[2]])
+    
+    gt_quats = np.tile(q_gt, (n_samples, 1))
+    
+    acc_vector = r.inv().apply(ned_up)
+    mag_vector = r.inv().apply(ned_north)
+    
+    raw_acc = np.tile(acc_vector, (n_samples, 1))
+    raw_mag = np.tile(mag_vector, (n_samples, 1))
+
+    # 3. 노이즈 및 편향 적용
+    M_g = M_gyro if M_gyro is not None else np.eye(3)
+    b_g = b_gyro if b_gyro is not None else np.zeros(3)
+    
+    M_a = M_acc if M_acc is not None else np.eye(3)
+    b_a = b_acc if b_acc is not None else np.zeros(3)
+    
+    M_m = M_mag if M_mag is not None else np.eye(3)
+    b_m = b_mag if b_mag is not None else np.zeros(3)
+
+    meas_gyro = apply_distortion(raw_gyro, M_g, b_g, sigma_gyro)
+    meas_acc = apply_distortion(raw_acc, M_a, b_a, sigma_acc)
+    meas_mag = apply_distortion(raw_mag, M_m, b_m, sigma_mag)
+
+    return time, gt_quats, meas_gyro, meas_acc, meas_mag
+
