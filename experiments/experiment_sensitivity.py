@@ -59,13 +59,13 @@ def evaluate_sensors(sigma, b_vector):
     # ---------------------------
     # 2. Magnetometer Comparison (Dynamic vs Static)
     # ---------------------------
-    # 공정성 확보: 총 샘플 수 1,000개로 통일
-    N_MAG_TOTAL = 1000
-    N_MAG_POS = 100
-    N_MAG_SAMP = N_MAG_TOTAL // N_MAG_POS
+    # 정적 평균화의 장점을 극대화하기 위해 포지션 당 샘플 수를 대폭 늘림 (Oversampling 효과 확인)
+    N_MAG_TOTAL_DYN = 1000
+    N_MAG_POS = 20
+    N_MAG_SAMP = 500
     
     # Train Data
-    _, raw_mag_dyn = sim_mag_figure8_dynamic(n_samples=N_MAG_TOTAL, sigma=sigma, b_vector=b_vector)
+    _, raw_mag_dyn = sim_mag_figure8_dynamic(n_samples=N_MAG_TOTAL_DYN, sigma=sigma, b_vector=b_vector)
     _, raw_mag_sta = sim_mag_multi_position_static(n_positions=N_MAG_POS, n_samples_per_pos=N_MAG_SAMP, sigma=sigma, b_vector=b_vector)
     
     # Test Data: 노이즈 포함
@@ -155,7 +155,7 @@ def plot_results(x_vals, results, xlabel_base, title_prefix, n_trials, filename=
 
     # 2. Magnetometer
     axes[1].plot(x_vals, results['Mag_Dynamic'], marker='o', linestyle='--', color='blue', label='Dynamic(Fig-8) [Tot:1000]')
-    axes[1].plot(x_vals, results['Mag_Static'], marker='s', color='green', label='Static(Multi) [Pos:20, Samp:50, Tot:1000]')
+    axes[1].plot(x_vals, results['Mag_Static'], marker='s', color='green', label='Static(Multi) [Pos:20, Samp:500, Tot:10000]')
     axes[1].set_title('Magnetometer Calibration Comparison')
     axes[1].set_ylabel(f'MSE (${units["Mag"]}^2$)')
     axes[1].set_xlabel(f'{xlabel_base} ({units["Mag"]})')
@@ -213,13 +213,13 @@ def demonstrate_3d_calibration(results_dir):
                                 filename=os.path.join(results_dir, '3d_mag_fig8_train.png'))
     
     print(" -> Rendering Magnetometer 3D Sphere (Static Train Data)...")
-    # 공정성 확보: 포지션 100개, 샘플 10개 (총 1000개)
-    _, raw_mag_sta = sim_mag_multi_position_static(n_positions=100, n_samples_per_pos=10, sigma=sigma, b_vector=b_vector)
+    # 정적 평균화 장점 확인: 포지션 20개, 샘플 500개 (총 10,000개)
+    _, raw_mag_sta = sim_mag_multi_position_static(n_positions=20, n_samples_per_pos=500, sigma=sigma, b_vector=b_vector)
     
-    # 10개의 샘플을 평균낸 100개의 깨끗한 점 추출
-    raw_mag_sta_avg = preprocess_mag(raw_mag_sta, 10)
+    # 500개의 샘플을 평균낸 20개의 깨끗한 점 추출
+    raw_mag_sta_avg = preprocess_mag(raw_mag_sta, 500)
     
-    W_mag_s, b_mag_s = calibrate_mag_static(raw_mag_sta, n_samples_per_pos=10)
+    W_mag_s, b_mag_s = calibrate_mag_static(raw_mag_sta, n_samples_per_pos=500)
     
     dict_mag_sta = {
         'Static (Multi)': (W_mag_s @ (raw_mag_sta_avg - b_mag_s).T).T
