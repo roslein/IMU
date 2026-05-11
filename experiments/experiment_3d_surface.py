@@ -104,7 +104,7 @@ def run_3d_surface_study(sample_counts, sigma_levels, n_trials=5):
 
     return X, Y, Z_acc_ell, Z_acc_12p, Z_mag_dyn, Z_mag_sta, Z_trk_ED, Z_trk_ES, Z_trk_12D, Z_trk_12S, log_messages
 
-def plot_3d_surfaces(X, Y, Z_acc_ell, Z_acc_12p, Z_mag_dyn, Z_mag_sta, Z_trk_ED, Z_trk_ES, Z_trk_12D, Z_trk_12S, sample_counts, out_dir):
+def plot_3d_surfaces(X, Y, Z_acc_ell, Z_acc_12p, Z_mag_dyn, Z_mag_sta, Z_trk_ED, Z_trk_ES, Z_trk_12D, Z_trk_12S, sample_counts, out_dir, n_trials):
     X_log = np.log10(X)
     xticks = np.log10(sample_counts)
     xlabels = [str(int(s)) for s in sample_counts]
@@ -122,24 +122,27 @@ def plot_3d_surfaces(X, Y, Z_acc_ell, Z_acc_12p, Z_mag_dyn, Z_mag_sta, Z_trk_ED,
 
     # 1. Accelerometer Figure
     fig_acc = plt.figure(figsize=(14, 6))
+    fig_acc.suptitle(f'Accelerometer Calibration Performance (Trials per Step: {n_trials})', fontsize=14, fontweight='bold')
     ax1 = fig_acc.add_subplot(121, projection='3d')
     setup_ax(ax1, 'Accel MSE: Ellipsoid (20-Pos)', Z_acc_ell, 'Reds')
     ax2 = fig_acc.add_subplot(122, projection='3d')
     setup_ax(ax2, 'Accel MSE: 12-Param (6-Face)', Z_acc_12p, 'Reds')
-    fig_acc.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05, wspace=0.15)
+    fig_acc.subplots_adjust(left=0.05, right=0.95, top=0.88, bottom=0.05, wspace=0.15)
     fig_acc.savefig(os.path.join(out_dir, '3d_surface_accel.png'), dpi=300)
     
     # 2. Magnetometer Figure
     fig_mag = plt.figure(figsize=(14, 6))
+    fig_mag.suptitle(f'Magnetometer Calibration Performance (Trials per Step: {n_trials})', fontsize=14, fontweight='bold')
     ax3 = fig_mag.add_subplot(121, projection='3d')
     setup_ax(ax3, 'Mag MSE: Dynamic (Fixed 1000)', Z_mag_dyn, 'Blues')
     ax4 = fig_mag.add_subplot(122, projection='3d')
     setup_ax(ax4, 'Mag MSE: Static (20-Pos)', Z_mag_sta, 'Blues')
-    fig_mag.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05, wspace=0.15)
+    fig_mag.subplots_adjust(left=0.05, right=0.95, top=0.88, bottom=0.05, wspace=0.15)
     fig_mag.savefig(os.path.join(out_dir, '3d_surface_magnetometer.png'), dpi=300)
 
     # 3. Tracking Figure
     fig_trk = plt.figure(figsize=(14, 12))
+    fig_trk.suptitle(f'Tracking RMSE for 4 Calibration Combinations (Trials per Step: {n_trials})', fontsize=16, fontweight='bold')
     ax5 = fig_trk.add_subplot(221, projection='3d')
     setup_ax(ax5, 'Track RMSE (Acc:Ell + Mag:Dyn)', Z_trk_ED, 'Greens')
     ax6 = fig_trk.add_subplot(222, projection='3d')
@@ -148,7 +151,7 @@ def plot_3d_surfaces(X, Y, Z_acc_ell, Z_acc_12p, Z_mag_dyn, Z_mag_sta, Z_trk_ED,
     setup_ax(ax7, 'Track RMSE (Acc:12p + Mag:Dyn)', Z_trk_12D, 'Greens')
     ax8 = fig_trk.add_subplot(224, projection='3d')
     setup_ax(ax8, 'Track RMSE (Acc:12p + Mag:Sta)', Z_trk_12S, 'Greens')
-    fig_trk.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05, wspace=0.15, hspace=0.25)
+    fig_trk.subplots_adjust(left=0.05, right=0.95, top=0.92, bottom=0.05, wspace=0.15, hspace=0.25)
     fig_trk.savefig(os.path.join(out_dir, '3d_surface_tracking.png'), dpi=300)
     
     plt.show()
@@ -161,14 +164,15 @@ if __name__ == "__main__":
     sample_counts = np.array([1, 5, 10, 50, 100, 500, 1000])
     sigma_levels = np.array([0.0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5])
     
-    res = run_3d_surface_study(sample_counts, sigma_levels, n_trials=5)
+    n_trials = 20
+    res = run_3d_surface_study(sample_counts, sigma_levels, n_trials=n_trials)
     X, Y, Z_acc_ell, Z_acc_12p, Z_mag_dyn, Z_mag_sta, Z_trk_ED, Z_trk_ES, Z_trk_12D, Z_trk_12S, log_messages = res
     
     log_path = os.path.join(RESULTS_DIR, '3d_surface_log.txt')
     with open(log_path, 'w', encoding='utf-8') as f:
         f.write("\n".join(log_messages))
     
-    plot_3d_surfaces(X, Y, Z_acc_ell, Z_acc_12p, Z_mag_dyn, Z_mag_sta, Z_trk_ED, Z_trk_ES, Z_trk_12D, Z_trk_12S, sample_counts, RESULTS_DIR)
+    plot_3d_surfaces(X, Y, Z_acc_ell, Z_acc_12p, Z_mag_dyn, Z_mag_sta, Z_trk_ED, Z_trk_ES, Z_trk_12D, Z_trk_12S, sample_counts, RESULTS_DIR, n_trials)
     
     print("\n[Study Complete] Saved files to results/ directory:")
     print("- 3d_surface_log.txt (Terminal values safely saved here!)")
