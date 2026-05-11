@@ -10,7 +10,8 @@ def calculate_mse(data_calibrated, target_norm=1.0):
 
 def plot_calibration_results(data_raw_test, dict_calibrated_data, 
                              title='3D Sensor Calibration Verification', 
-                             unit='Normalized'):
+                             unit='Normalized',
+                             mse_text='', filename=None):
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')
     
@@ -41,18 +42,29 @@ def plot_calibration_results(data_raw_test, dict_calibrated_data,
     ax.set_ylabel(f'Y axis ({unit})')
     ax.set_zlabel(f'Z axis ({unit})')
     
+    if mse_text:
+        # 화면의 좌상단에 MSE 정보 텍스트 박스 추가
+        ax.text2D(0.05, 0.95, mse_text, transform=ax.transAxes, fontsize=12,
+                  verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+        
     ax.set_box_aspect([1,1,1])
     ax.legend()
+    if filename:
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
     plt.show()
 
-def verify_calibration_pipeline(data_raw_test, dict_calibrated_data, target_norm=1.0, title='3D Sensor Calibration Verification', unit='Normalized'):
+def verify_calibration_pipeline(data_raw_test, dict_calibrated_data, target_norm=1.0, title='3D Sensor Calibration Verification', unit='Normalized', filename=None):
     print(f"\n[{title}]")
-    print(f"Raw Test Data MSE: {calculate_mse(data_raw_test, target_norm):.6f}")
+    raw_mse = calculate_mse(data_raw_test, target_norm)
+    print(f"Raw Test Data MSE: {raw_mse:.6f}")
     
+    mse_text = f"Raw MSE: {raw_mse:.6f}\n"
     for algo_name, data_cal in dict_calibrated_data.items():
-        print(f"Algorithm ({algo_name}) MSE: {calculate_mse(data_cal, target_norm):.6f}")
+        algo_mse = calculate_mse(data_cal, target_norm)
+        print(f"Algorithm ({algo_name}) MSE: {algo_mse:.6f}")
+        mse_text += f"{algo_name} MSE: {algo_mse:.6f}\n"
         
-    plot_calibration_results(data_raw_test, dict_calibrated_data, title=title, unit=unit)
+    plot_calibration_results(data_raw_test, dict_calibrated_data, title=title, unit=unit, mse_text=mse_text.strip(), filename=filename)
 
 # utils_visualization.py 에 추가할 코드
 
@@ -64,7 +76,8 @@ def calculate_mse_gt(data_calibrated, data_gt):
 
 def plot_gyro_calibration_results(data_gt, data_raw, dict_calibrated_data, 
                                   title='3D Gyroscope Calibration Verification', 
-                                  unit='dps'):
+                                  unit='dps',
+                                  mse_text='', filename=None):
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')
     
@@ -90,22 +103,33 @@ def plot_gyro_calibration_results(data_gt, data_raw, dict_calibrated_data,
     ax.set_ylabel(f'Y axis ({unit})')
     ax.set_zlabel(f'Z axis ({unit})')
 
+    if mse_text:
+        # 화면의 좌상단에 MSE 정보 텍스트 박스 추가
+        ax.text2D(0.05, 0.95, mse_text, transform=ax.transAxes, fontsize=12,
+                  verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+
     ax.set_box_aspect([1, 1, 1])
     
     ax.legend()
+    if filename:
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
     plt.show()
 
 def verify_gyro_calibration_pipeline(data_gt, data_raw, dict_calibrated_data, 
                                      title='3D Gyroscope Calibration Verification', 
-                                     unit='dps'):
+                                     unit='dps', filename=None):
     # 정량적 MSE 평가 (GT와의 거리 기준)
-    print(f"Gyroscope Raw Data MSE (vs GT): {calculate_mse_gt(data_raw, data_gt):.6f}")
+    raw_mse = calculate_mse_gt(data_raw, data_gt)
+    print(f"Gyroscope Raw Data MSE (vs GT): {raw_mse:.6f}")
     
+    mse_text = f"Raw MSE: {raw_mse:.6f}\n"
     for algo_name, data_cal in dict_calibrated_data.items():
-        print(f"Gyroscope Calibrated ({algo_name}) MSE (vs GT): {calculate_mse_gt(data_cal, data_gt):.6f}")
+        algo_mse = calculate_mse_gt(data_cal, data_gt)
+        print(f"Gyroscope Calibrated ({algo_name}) MSE (vs GT): {algo_mse:.6f}")
+        mse_text += f"{algo_name} MSE: {algo_mse:.6f}\n"
     
     # 정성적 3D 시각화
-    plot_gyro_calibration_results(data_gt, data_raw, dict_calibrated_data, title, unit)
+    plot_gyro_calibration_results(data_gt, data_raw, dict_calibrated_data, title=title, unit=unit, mse_text=mse_text.strip(), filename=filename)
 
 # ==========================================
 # [Step 2] 2D 성능 평가 그래프 유틸리티
